@@ -1,0 +1,8 @@
+services:
+  haproxy:
+    image: haproxy:3.0-alpine
+    container_name: multi-local-haproxy
+    network_mode: host
+    volumes:
+      - ./ops/haproxy/local-multi-instance.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    restart: unless-stopped

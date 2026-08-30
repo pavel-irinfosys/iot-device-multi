@@ -1,0 +1,13 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: multi
+
+app:
+  instance-id: ${INSTANCE_ID:local}
+
+device:
+  simulator:
+    interval-ms: ${DEVICE_SIMULATOR_INTERVAL_MS:30}

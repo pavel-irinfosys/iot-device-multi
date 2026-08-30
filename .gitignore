@@ -1,0 +1,59 @@
+# Java / Spring Boot
+target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
+
+# Keep Maven wrapper metadata, but ignore the downloaded wrapper jar.
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+pip-wheel-metadata/
+
+# Packaging
+dist/
+*.egg-info/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.iws
+*.iml
+*.ipr
+*.suo
+*.ntvs*
+
+# Codex local workspace metadata
+.codex/
+.agents/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.*
