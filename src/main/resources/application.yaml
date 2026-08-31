@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: multi
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:26379}
 
 app:
   instance-id: ${INSTANCE_ID:local}
@@ -11,3 +15,4 @@ app:
 device:
   simulator:
     interval-ms: ${DEVICE_SIMULATOR_INTERVAL_MS:30}
+
