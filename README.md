@@ -13,7 +13,7 @@ Local cluster layout:
 | Spring Boot `app2` | `http://localhost:8082` |
 | Spring Boot `app3` | `http://localhost:8083` |
 
-HAProxy uses sticky cookies so a browser session stays on the same backend instance. This matters because websocket subscriptions and latest device data are stored in memory inside each Spring Boot process.
+HAProxy uses sticky cookies so a browser session stays on the same backend instance. Websocket subscriptions stay in memory inside each Spring Boot process, while latest device data is shared through Redis.
 
 ## Requirements
 
@@ -31,7 +31,7 @@ cd /home/pavel/projects/test/multi
 make start
 ```
 
-This builds the Spring Boot jar, starts `app1`, `app2`, and `app3`, then starts HAProxy on `http://localhost:8080`.
+This builds the Spring Boot jar, starts the project Redis service, starts `app1`, `app2`, and `app3`, then starts HAProxy on `http://localhost:8080`.
 
 Open the browser at:
 

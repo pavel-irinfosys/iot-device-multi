@@ -21,7 +21,7 @@ else
 fi
 
 if ! command -v docker >/dev/null 2>&1; then
-  echo "Docker is required to run the local HAProxy front door." >&2
+  echo "Docker is required to run local Redis and the HAProxy front door." >&2
   exit 1
 fi
 
@@ -31,7 +31,7 @@ if ! command -v curl >/dev/null 2>&1; then
 fi
 
 if ! docker compose version >/dev/null 2>&1; then
-  echo "Docker Compose is required to run the local HAProxy front door." >&2
+  echo "Docker Compose is required to run local Redis and the HAProxy front door." >&2
   exit 1
 fi
 
@@ -100,6 +100,24 @@ wait_for_instance() {
   exit 1
 }
 
+wait_for_redis() {
+  local response=""
+
+  echo "Waiting for Redis on localhost:26379..."
+  for _ in {1..60}; do
+    if response="$(docker compose -f "$COMPOSE_FILE" exec -T redis redis-cli ping 2>/dev/null)" \
+        && [[ "$response" == "PONG" ]]; then
+      return 0
+    fi
+
+    sleep 1
+  done
+
+  echo "Redis did not become healthy on localhost:26379. Log tail:" >&2
+  docker compose -f "$COMPOSE_FILE" logs redis >&2 || true
+  exit 1
+}
+
 verify_proxy_sticky_session() {
   local cookie_file="$CLUSTER_DIR/proxy-cookie.txt"
   local first_response=""
@@ -144,6 +162,10 @@ verify_proxy_sticky_session() {
   echo "Verified sticky proxy routing through http://localhost:8080/api/instance: $first_response"
 }
 
+echo "Starting Redis on localhost:26379..."
+docker compose -f "$COMPOSE_FILE" up -d redis
+wait_for_redis
+
 start_instance app1 8081
 start_instance app2 8082
 start_instance app3 8083
@@ -153,7 +175,7 @@ wait_for_instance app2 8082
 wait_for_instance app3 8083
 
 echo "Starting HAProxy on http://localhost:8080..."
-docker compose -f "$COMPOSE_FILE" up -d
+docker compose -f "$COMPOSE_FILE" up -d haproxy
 verify_proxy_sticky_session
 
 echo

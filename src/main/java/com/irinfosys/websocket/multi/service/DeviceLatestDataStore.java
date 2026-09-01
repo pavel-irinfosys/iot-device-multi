@@ -27,7 +27,7 @@ public class DeviceLatestDataStore {
           data.imei(),
           objectMapper.writeValueAsString(data)
       );
-    } catch (JsonProcessingException error) {
+    } catch (Exception error) {
       throw new IllegalStateException("Failed to serialize device data", error);
     }
   }
@@ -43,7 +43,7 @@ public class DeviceLatestDataStore {
       return Optional.of(
           objectMapper.readValue(value.toString(), DeviceLatestData.class)
       );
-    } catch (JsonProcessingException error) {
+    } catch (Exception error) {
       throw new IllegalStateException("Failed to deserialize device data", error);
     }
   }

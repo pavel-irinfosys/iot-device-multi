@@ -6,13 +6,14 @@ CLUSTER_DIR := target/local-cluster
 COOKIE_FILE ?= /tmp/multi-local-cookie.txt
 MVN ?= mvn
 
-.PHONY: help start stop restart test package proxy-config status sticky-check logs logs-app1 logs-app2 logs-app3
+.PHONY: help start stop restart up test package proxy-config status sticky-check logs logs-app1 logs-app2 logs-app3
 
 help:
 	@printf "Local multi-instance Spring Boot targets:\n"
 	@printf "  make start          Build jar, start app1-app3, and start HAProxy\n"
 	@printf "  make stop           Stop the managed app instances and HAProxy\n"
 	@printf "  make restart        Stop, then start the local cluster\n"
+	@printf "  make up             Start Docker Compose services\n"
 	@printf "  make status         Check app1-app3 and the HAProxy front door\n"
 	@printf "  make sticky-check   Verify HAProxy keeps one cookie jar on one backend\n"
 	@printf "  make logs           Tail all local app logs\n"
@@ -30,6 +31,9 @@ stop:
 	./scripts/stop-local-cluster.sh
 
 restart: stop start
+
+up:
+	docker compose -f $(COMPOSE_FILE) up -d
 
 test:
 	$(MVN) test

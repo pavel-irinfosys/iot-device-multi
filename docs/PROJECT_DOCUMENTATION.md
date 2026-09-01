@@ -84,7 +84,7 @@ Paths in this document are relative to the project root unless stated otherwise.
 | `src/main/resources/application.yaml` | Runtime defaults for server port, instance id, Redis, and simulator interval |
 | `src/main/resources/static` | Browser UI served by Spring Boot |
 | `sim-device` | Python STOMP client and fake device simulator |
-| `scripts/start-local-cluster.sh` | Builds the jar, starts three app instances, starts Docker Compose services, verifies sticky routing |
+| `scripts/start-local-cluster.sh` | Builds the jar, starts Redis, starts three app instances, starts HAProxy, verifies sticky routing |
 | `scripts/stop-local-cluster.sh` | Stops Docker Compose services and managed Spring Boot instance processes |
 | `compose.local-proxy.yml` | Docker Compose file for HAProxy and Redis |
 | `ops/haproxy/local-multi-instance.cfg` | HAProxy frontend/backend and sticky cookie configuration |
@@ -353,13 +353,14 @@ What happens:
 1. `scripts/start-local-cluster.sh` chooses a Maven command.
 2. It stops any previously managed local cluster.
 3. It builds `target/multi-0.0.1.jar` with tests skipped.
-4. It starts three Java processes:
+4. It starts Redis from `compose.local-proxy.yml` and waits for `redis-cli ping` to return `PONG`.
+5. It starts three Java processes:
    - `INSTANCE_ID=app1 SERVER_PORT=8081`
    - `INSTANCE_ID=app2 SERVER_PORT=8082`
    - `INSTANCE_ID=app3 SERVER_PORT=8083`
-5. It waits for each `/api/instance` endpoint to become healthy.
-6. It starts Docker Compose services from `compose.local-proxy.yml`, including HAProxy and Redis.
-7. It verifies sticky routing through `http://localhost:8080/api/instance`.
+6. It waits for each `/api/instance` endpoint to become healthy.
+7. It starts HAProxy from `compose.local-proxy.yml`.
+8. It verifies sticky routing through `http://localhost:8080/api/instance`.
 
 Logs and PID files are written under:
 

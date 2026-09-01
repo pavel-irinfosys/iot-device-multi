@@ -35,7 +35,7 @@ public class DeviceDataService {
           deviceDataTopic.getTopic(),
           objectMapper.writeValueAsString(latestData)
       );
-    } catch (JsonProcessingException error) {
+    } catch (Exception error) {
       throw new IllegalStateException("Failed to publish device data", error);
     }
   }
