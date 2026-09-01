@@ -1,5 +1,25 @@
 # Multi Spring Boot WebSocket Demo - Project Documentation
 
+## Table Of Contents
+
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Tech Stack](#tech-stack)
+- [Runtime Topology](#runtime-topology)
+- [Source Layout](#source-layout)
+- [Backend Application](#backend-application)
+- [Device Data Flow](#device-data-flow)
+- [Web UI](#web-ui)
+- [Python Device Simulator](#python-device-simulator)
+- [Local Cluster Operations](#local-cluster-operations)
+- [Build And Test](#build-and-test)
+- [Configuration](#configuration)
+- [Docker Compose Services](#docker-compose-services)
+- [HAProxy Configuration](#haproxy-configuration)
+- [Current Limitations](#current-limitations)
+- [Common Troubleshooting](#common-troubleshooting)
+- [Development Notes](#development-notes)
+
 ## Overview
 
 This project is a local multi-instance Spring Boot WebSocket/STOMP demo for streaming simulated device data to browser clients.
@@ -14,6 +34,45 @@ The main use case is:
 6. Each app instance receives the Redis event and pushes matching updates to its own connected browser sessions.
 
 The project also includes a local HAProxy setup that runs three Spring Boot instances behind one front door. HAProxy uses sticky cookies so each browser stays on the same backend instance for its websocket session. Latest device data is shared through Redis, while active websocket sessions and selected IMEI subscriptions still live inside each Spring Boot process.
+
+## Quick Start
+
+From the project root, start the full local cluster:
+
+```bash
+cd /home/pavel/projects/test/multi
+make start
+```
+
+Open the browser UI:
+
+```text
+http://localhost:8080
+```
+
+In another terminal, start the Python simulator:
+
+```bash
+cd /home/pavel/projects/test/multi/sim-device
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python main.py 10 1000XXXXX
+```
+
+Then use the UI:
+
+1. Click `Connect to Server`.
+2. Click `Get All Devices`.
+3. Select one or more IMEIs.
+4. Click `Subscribe Selected Devices`.
+5. Watch live data appear in the subscribed device data panel.
+
+Stop the cluster when finished:
+
+```bash
+cd /home/pavel/projects/test/multi
+make stop
+```
 
 ## Tech Stack
 
@@ -79,7 +138,7 @@ Paths in this document are relative to the project root unless stated otherwise.
 | Path | Purpose |
 | --- | --- |
 | `pom.xml` | Maven project definition, Java version, Spring Boot, Redis, Jackson, and plugin dependencies |
-| `Makefile` | Common local commands for build, test, cluster control, logs, and HAProxy checks |
+| `Makefile` | Common local commands for build, test, cluster control, logs, Docker Compose, and HAProxy checks |
 | `src/main/java/com/irinfosys/websocket/multi` | Spring Boot application source |
 | `src/main/resources/application.yaml` | Runtime defaults for server port, instance id, Redis, and simulator interval |
 | `src/main/resources/static` | Browser UI served by Spring Boot |
@@ -168,6 +227,8 @@ Redis is used for two separate jobs:
 | Pub/sub channel | `device-data-events` | Broadcasts each new device update to every running Spring Boot instance |
 
 The websocket subscription store remains local to each app process. This is intentional because websocket sessions cannot be moved into Redis; each app can only send messages to sessions connected to that same app.
+
+Redis must be available before the Spring Boot context finishes starting because the `RedisMessageListenerContainer` subscribes to `device-data-events` during startup. The local cluster script starts the project Redis service first, waits for `PONG`, and only then launches the Java instances.
 
 ### Data Models
 
@@ -368,6 +429,8 @@ Logs and PID files are written under:
 target/local-cluster
 ```
 
+The script intentionally uses this repo's Redis service on `localhost:26379`. If another Redis container is already running on a different host port, it is ignored unless Spring Boot is launched manually with `REDIS_HOST` or `REDIS_PORT` overrides.
+
 ### Stop
 
 ```bash
@@ -381,6 +444,14 @@ This stops the Docker Compose services and the managed Spring Boot jar processes
 ```bash
 make restart
 ```
+
+### Docker Compose Only
+
+```bash
+make up
+```
+
+This starts the services in `compose.local-proxy.yml`. It is useful for manually starting Redis and HAProxy, but the normal full-cluster path is still `make start` because that also builds and launches the Java app instances.
 
 ### Status
 
@@ -440,6 +511,8 @@ mvn package -DskipTests
 ```
 
 The current test suite contains a minimal Spring context load test.
+
+Because Redis is required at runtime, `mvn test` expects Redis to be reachable on the configured Redis host and port. Running `make start` or `make up` starts the project Redis container on `localhost:26379`.
 
 ## Configuration
 
@@ -549,6 +622,23 @@ Likely causes:
 
 Check the connected instance in the UI and in simulator output.
 
+### Spring Boot fails with `Unable to connect to Redis`
+
+The app defaults to `localhost:26379`, which is the host port exposed by this repo's `multi-local-redis` container. If the error mentions a different port or if another Redis container is running elsewhere, confirm the project Redis service is up:
+
+```bash
+docker compose -f compose.local-proxy.yml ps redis
+docker exec multi-local-redis redis-cli ping
+```
+
+Expected output:
+
+```text
+PONG
+```
+
+If Redis is not running, use `make start` for the full cluster or `make up` for only the Compose services.
+
 ### `ModuleNotFoundError: No module named 'websocket'`
 
 Install simulator dependencies:
@@ -568,7 +658,7 @@ Confirm Docker Compose is available:
 docker compose version
 ```
 
-The local HAProxy front door requires Docker Compose.
+The local Redis service and HAProxy front door require Docker Compose.
 
 ## Development Notes
 

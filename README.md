@@ -2,6 +2,8 @@
 
 This project is a Spring Boot WebSocket/STOMP device data demo. It can run as a local three-instance cluster behind HAProxy, and a Python simulator can send generated device data into the Spring Boot websocket controller.
 
+For the full architecture, operations, API, and troubleshooting guide, see [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md).
+
 ## Architecture
 
 Local cluster layout:
@@ -12,6 +14,7 @@ Local cluster layout:
 | Spring Boot `app1` | `http://localhost:8081` |
 | Spring Boot `app2` | `http://localhost:8082` |
 | Spring Boot `app3` | `http://localhost:8083` |
+| Redis | `localhost:26379` |
 
 HAProxy uses sticky cookies so a browser session stays on the same backend instance. Websocket subscriptions stay in memory inside each Spring Boot process, while latest device data is shared through Redis.
 
@@ -83,13 +86,14 @@ Install Python dependencies:
 
 ```bash
 cd /home/pavel/projects/test/multi/sim-device
+python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
 
 Run the simulator:
 
 ```bash
-.venv/bin/python main.py
+.venv/bin/python main.py 10 1000XXXXX
 ```
 
 By default, the Python sender connects to:
@@ -101,10 +105,10 @@ ws://localhost:8080/ws
 Override the websocket URL when needed:
 
 ```bash
-DEVICE_SOCKET_URL=ws://localhost:8081/ws .venv/bin/python main.py
+DEVICE_SOCKET_URL=ws://localhost:8081/ws .venv/bin/python main.py 10 1000XXXXX
 ```
 
-Using a direct backend URL such as `ws://localhost:8081/ws` is useful when you want the Python sender and browser subscriber to use the same Spring Boot instance during local testing.
+Using a direct backend URL such as `ws://localhost:8081/ws` is useful when you want to isolate one Spring Boot instance during local testing.
 
 ## WebSocket And STOMP Endpoints
 
@@ -208,12 +212,12 @@ make restart
 
 ### Browser Does Not Receive Python Device Data
 
-The local cluster uses sticky sessions and in-memory websocket subscriptions. If the browser and Python sender are routed to different backend instances, the browser may not receive the Python data.
+Latest device data and update events are shared through Redis, so the browser and Python sender can use different backend instances. If live data does not appear, confirm Redis is running and that the browser subscribed to IMEIs the simulator is actively uploading.
 
-For local testing, use the same direct backend for both clients, for example:
+To isolate HAProxy while debugging, use the same direct backend for both clients, for example:
 
 ```bash
-DEVICE_SOCKET_URL=ws://localhost:8081/ws .venv/bin/python main.py
+DEVICE_SOCKET_URL=ws://localhost:8081/ws .venv/bin/python main.py 10 1000XXXXX
 ```
 
 Then open:
@@ -224,7 +228,7 @@ http://localhost:8081
 
 ### Docker Or Compose Is Missing
 
-`make start` requires Docker and Docker Compose because HAProxy runs in Docker. Confirm Compose is available:
+`make start` requires Docker and Docker Compose because Redis and HAProxy run in Docker. Confirm Compose is available:
 
 ```bash
 docker compose version

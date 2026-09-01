@@ -10,7 +10,7 @@ MVN ?= mvn
 
 help:
 	@printf "Local multi-instance Spring Boot targets:\n"
-	@printf "  make start          Build jar, start app1-app3, and start HAProxy\n"
+	@printf "  make start          Build jar, start Redis, app1-app3, and HAProxy\n"
 	@printf "  make stop           Stop the managed app instances and HAProxy\n"
 	@printf "  make restart        Stop, then start the local cluster\n"
 	@printf "  make up             Start Docker Compose services\n"
